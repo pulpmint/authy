@@ -20,13 +20,13 @@ initialiser
 
     app.get(BASE_ROUTE, (req: Request, res: Response) => {
       res.status(200).json({
-        msg: "Server is running"
+        message: "Server is running"
       });
     });
 
     app.use((req: Request, res: Response) => {
       res.status(404).json({
-        msg: "API not found"
+        message: "API not found"
       });
     });
 
