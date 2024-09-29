@@ -16,9 +16,8 @@ export default class Initialiser {
 
         console.log("✨ All services initialised");
         resolve();
-      } catch (err) {
-        console.log(err);
-
+      } catch (error) {
+        console.log(error);
         console.log("💀 Error initialising:", this.services[0]);
         reject();
       }
