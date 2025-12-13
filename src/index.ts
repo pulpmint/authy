@@ -7,6 +7,7 @@ import { exit } from "process";
 import errorHandler from "./middlewares/errorMidleware";
 
 import authController from "@/controllers/authController";
+import userController from "@/controllers/userController";
 
 import { BASE_ROUTE } from "@/constants/routes";
 
@@ -30,6 +31,7 @@ initialiser
     });
 
     app.use(authController);
+    app.use(userController);
 
     app.use((req: Request, res: Response) => {
       res.status(404).json({
