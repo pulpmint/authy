@@ -4,6 +4,10 @@ import express from "express";
 import morgan from "morgan";
 import { exit } from "process";
 
+import errorHandler from "./middlewares/errorMidleware";
+
+import authController from "@/controllers/authController";
+
 import { BASE_ROUTE } from "@/constants/routes";
 
 import Initialiser from "@/lib/initialiser";
@@ -22,13 +26,19 @@ initialiser
       res.status(200).json({
         message: "Server is running"
       });
+      return;
     });
+
+    app.use(authController);
 
     app.use((req: Request, res: Response) => {
       res.status(404).json({
         message: "API not found"
       });
+      return;
     });
+
+    app.use(errorHandler);
 
     app.listen(5000, () => {
       console.log("🟢 Server started successfully on port 5000");
