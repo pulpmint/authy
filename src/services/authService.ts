@@ -4,6 +4,8 @@ import type {
   SignUpPayload
 } from "@/validations/authValidations";
 
+import { JWT_CONFIG } from "@/constants/jwt";
+
 import { hashPassword, verifyPassword } from "@/utils";
 import { setTokens } from "@/utils/jwt";
 
@@ -80,6 +82,34 @@ export const signIn = async (
     res.status(200).json({
       message: "User signed in successfully",
       data: payload
+    });
+    return;
+  } catch (error) {
+    next(error);
+    return;
+  }
+};
+
+export const signOut = async (
+  req: Request<any, any, SignInPayload>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    res.clearCookie(JWT_CONFIG.ACCESS.COOKIE, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict"
+    });
+
+    res.clearCookie(JWT_CONFIG.REFRESH.COOKIE, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict"
+    });
+
+    res.status(200).json({
+      message: "User logged out successfully"
     });
     return;
   } catch (error) {

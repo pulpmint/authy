@@ -4,9 +4,13 @@ import { Router } from "express";
 
 import payloadValidation from "@/middlewares/payloadMiddleware";
 
-import { signIn, signUp } from "@/services/authService";
+import { signIn, signUp, signOut } from "@/services/authService";
 
-import { SIGN_IN_ROUTE, SIGN_UP_ROUTE } from "@/constants/routes";
+import {
+  SIGN_IN_ROUTE,
+  SIGN_OUT_ROUTE,
+  SIGN_UP_ROUTE
+} from "@/constants/routes";
 
 import {
   SIGN_IN_PAYLOAD_VALIDATION,
@@ -28,5 +32,7 @@ router.post(
     payloadValidation(req, res, next, SIGN_IN_PAYLOAD_VALIDATION),
   signIn
 );
+
+router.post(SIGN_OUT_ROUTE, signOut);
 
 export default router;
