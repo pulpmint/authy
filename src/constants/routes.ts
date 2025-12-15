@@ -1,4 +1,4 @@
 export const BASE_ROUTE = "/";
 export const SIGN_UP_ROUTE = "/sign-up";
 export const SIGN_IN_ROUTE = "/sign-in";
-export const USER_DETAILS_ROUTE = "/user/:userId";
+export const USER_DETAILS_ROUTE = "/user/details";

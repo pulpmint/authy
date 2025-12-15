@@ -8,10 +8,10 @@ export const userDetails = async (
   next: NextFunction
 ) => {
   try {
-    const { userId } = req.params;
+    const { id } = res.locals.payload;
 
     const user = await Prisma.user.findUnique({
-      where: { id: userId }
+      where: { id }
     });
 
     if (!user) {

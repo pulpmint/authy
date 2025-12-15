@@ -11,9 +11,14 @@ export const ERR_CODES_MAPPING: ErrorCodesMapping = {
   P2002: {
     status: 400,
     message: "User already exists"
+  },
+  DEFAULT: {
+    status: 500,
+    message: "Something went wrong"
   }
 };
 
 export const CUSTOM_ERR_CODES_MAPPING = {
-  VALIDATIONS: "VALIDATIONS"
+  PAYLOAD_VALIDATIONS: "PAYLOAD_VALIDATIONS",
+  JWT_VALIDATIONS: "JWT_VALIDATIONS"
 };

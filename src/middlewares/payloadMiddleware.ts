@@ -26,9 +26,8 @@ const payloadValidation = (
   if (Object.keys(errors).length) {
     next(
       createHttpError(400, {
-        message: "Invalid payload",
         errors,
-        code: CUSTOM_ERR_CODES_MAPPING.VALIDATIONS
+        code: CUSTOM_ERR_CODES_MAPPING.PAYLOAD_VALIDATIONS
       })
     );
     return;

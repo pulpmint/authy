@@ -14,28 +14,35 @@ const errorHandler = (
 ) => {
   console.log("ERROR HANDLER", { ...error });
 
-  const { code, message, errors } = error;
+  const { status, code, message, errors } = error;
 
   switch (code) {
-    case CUSTOM_ERR_CODES_MAPPING.VALIDATIONS: {
-      res.status(400).json({ message, errors });
+    case CUSTOM_ERR_CODES_MAPPING.PAYLOAD_VALIDATIONS: {
+      res.status(400).json({
+        message: "Invalid request",
+        errors: errors || {}
+      });
+      return;
+    }
+    case CUSTOM_ERR_CODES_MAPPING.JWT_VALIDATIONS: {
+      res.status(status || 401).json({
+        message: message || "Unauthorised"
+      });
       return;
     }
     default: {
-      const errRes = code ? ERR_CODES_MAPPING[code] : undefined;
+      const errRes = ERR_CODES_MAPPING[code || "DEFAULT"];
 
       if (errRes) {
-        const { status, ...rest } = errRes;
-        res.status(status).json(rest);
+        const { status, message, ...rest } = errRes;
+        res.status(status).json({
+          message,
+          ...rest
+        });
         return;
       }
     }
   }
-
-  res.status(500).json({
-    message: "Something went wrong"
-  });
-  return;
 };
 
 export default errorHandler;

@@ -1,8 +1,8 @@
 import type { CookieOptions, Response } from "express";
-import type { JWTPayload } from "jose";
+import type { JWTPayload, JWTVerifyResult } from "jose";
 import type { JwtTokenType } from "@/constants/jwt";
 
-import { SignJWT } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 
 import { JWT_CONFIG, JWT_TOKENS } from "@/constants/jwt";
 
@@ -70,6 +70,30 @@ export const setTokens = (res: Response, payload: any): Promise<String> => {
       resolve("Tokens added to the response");
     } catch (error) {
       reject(error);
+    }
+  });
+};
+
+export const verifyToken = (
+  type: JwtTokenType,
+  token?: string
+): Promise<JWTVerifyResult<JWTPayload> | null> => {
+  return new Promise(async resolve => {
+    try {
+      if (!token) {
+        resolve(null);
+      } else {
+        const { SECRET } = JWT_CONFIG[type];
+
+        const decoded = await jwtVerify(
+          token,
+          new TextEncoder().encode(SECRET)
+        );
+
+        resolve(decoded);
+      }
+    } catch (err) {
+      resolve(null);
     }
   });
 };
