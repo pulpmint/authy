@@ -5,6 +5,7 @@ import type {
 } from "@/validations/authValidations";
 
 import { hashPassword, verifyPassword } from "@/utils";
+import { setTokens } from "@/utils/jwt";
 
 import Prisma from "@/lib/prisma";
 
@@ -25,14 +26,15 @@ export const signUp = async (
     };
 
     const user = await Prisma.user.create({ data });
+    const { id } = user;
+
+    const payload = { id, name, email };
+
+    await setTokens(res, payload);
 
     res.status(201).json({
       message: "User registered successfully",
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
+      data: payload
     });
     return;
   } catch (error) {
@@ -70,13 +72,14 @@ export const signIn = async (
       return;
     }
 
+    const { id, name } = user;
+    const payload = { id, name, email };
+
+    await setTokens(res, payload);
+
     res.status(200).json({
       message: "User signed in successfully",
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
+      data: payload
     });
     return;
   } catch (error) {
