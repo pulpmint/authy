@@ -1,10 +1,12 @@
-import type { CookieOptions, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import type { JWTPayload, JWTVerifyResult } from "jose";
 import type { JwtTokenType } from "@/constants/jwt";
 
 import { jwtVerify, SignJWT } from "jose";
 
 import { JWT_CONFIG, JWT_TOKENS } from "@/constants/jwt";
+
+import { getCookie } from "@/utils";
 
 export const createTokenCookieConfig = (exp: Date): CookieOptions => {
   return {
@@ -18,8 +20,8 @@ export const createTokenCookieConfig = (exp: Date): CookieOptions => {
 export const signToken = (
   payload: JWTPayload,
   type: JwtTokenType,
-  iat: number | string | Date,
-  exp: number | string | Date
+  iat: number,
+  exp: number
 ): Promise<string> => {
   const { SECRET } = JWT_CONFIG[type];
 
@@ -42,7 +44,7 @@ export const setTokenCookie = (
       const iat = Date.now();
       const exp = new Date(iat + TIME);
 
-      const token = await signToken(payload, type, iat, exp);
+      const token = await signToken(payload, type, iat, exp.getTime());
 
       res.cookie(COOKIE, token, createTokenCookieConfig(exp));
 
@@ -92,8 +94,55 @@ export const verifyToken = (
 
         resolve(decoded);
       }
-    } catch (err) {
+    } catch (error) {
       resolve(null);
     }
   });
+};
+
+export const verifyAccessToken = (token?: string) =>
+  verifyToken(JWT_TOKENS.ACCESS, token);
+
+export const verifyRefreshToken = (token?: string) =>
+  verifyToken(JWT_TOKENS.REFRESH, token);
+
+export const verifyTokens = (
+  req: Request
+): Promise<(JWTVerifyResult<JWTPayload> | null)[]> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const accessToken = getCookie(JWT_CONFIG.ACCESS.COOKIE, req);
+      const refreshtoken = getCookie(JWT_CONFIG.REFRESH.COOKIE, req);
+
+      const [access, refresh] = await Promise.all([
+        verifyAccessToken(accessToken),
+        verifyRefreshToken(refreshtoken)
+      ]);
+
+      resolve([access, refresh]);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const clearToken = (res: Response, type: JwtTokenType) => {
+  const { COOKIE } = JWT_CONFIG[type];
+
+  res.clearCookie(COOKIE, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict"
+  });
+};
+
+export const clearAccessToken = (res: Response) =>
+  clearToken(res, JWT_TOKENS.ACCESS);
+
+export const clearRefreshToken = (res: Response) =>
+  clearToken(res, JWT_TOKENS.REFRESH);
+
+export const clearTokens = (res: Response) => {
+  clearAccessToken(res);
+  clearRefreshToken(res);
 };

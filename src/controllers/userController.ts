@@ -1,8 +1,8 @@
 import { Router } from "express";
 
-import { userDetails } from "@/services/userService";
-
 import { verifyJwt } from "@/middlewares/jwtMiddleware";
+
+import { userDetails } from "@/services/userService";
 
 import { USER_DETAILS_ROUTE } from "@/constants/routes";
 

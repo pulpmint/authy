@@ -2,11 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 
 import createHttpError from "http-errors";
 
-import { JWT_CONFIG, JWT_TOKENS } from "@/constants/jwt";
-
-import { getCookie } from "@/utils";
-import { setTokens, verifyToken } from "@/utils/jwt";
 import { CUSTOM_ERR_CODES_MAPPING } from "@/constants/errors";
+
+import { setTokens, verifyTokens } from "@/utils/jwt";
 
 export const verifyJwt = async (
   req: Request,
@@ -14,13 +12,7 @@ export const verifyJwt = async (
   next: NextFunction
 ) => {
   try {
-    const accessToken = getCookie(JWT_CONFIG.ACCESS.COOKIE, req);
-    const refreshToken = getCookie(JWT_CONFIG.REFRESH.COOKIE, req);
-
-    const [accessDecoded, refreshDecoded] = await Promise.all([
-      verifyToken(JWT_TOKENS.ACCESS, accessToken),
-      verifyToken(JWT_TOKENS.REFRESH, refreshToken)
-    ]);
+    const [accessDecoded, refreshDecoded] = await verifyTokens(req);
 
     const accessPayload = accessDecoded?.payload;
     const refreshPayload = refreshDecoded?.payload;

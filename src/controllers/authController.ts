@@ -33,6 +33,6 @@ router.post(
   signIn
 );
 
-router.post(SIGN_OUT_ROUTE, signOut);
+router.get(SIGN_OUT_ROUTE, signOut);
 
 export default router;
