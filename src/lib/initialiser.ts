@@ -1,10 +1,11 @@
 import Prisma from "@/lib/prisma";
+import Redis from "@/lib/redis";
 
 export default class Initialiser {
-  private services: Array<string> = ["MongoDB"];
+  private services: Array<string> = ["MongoDB", "Redis"];
 
   private onSuccess = () => {
-    console.log("🤘 Service initialised:", this.services[0]);
+    console.log("✅ Service initialised:", this.services[0]);
     this.services.shift();
   };
 
@@ -12,6 +13,9 @@ export default class Initialiser {
     return new Promise<void>(async (resolve, reject) => {
       try {
         await Prisma.$connect();
+        this.onSuccess();
+
+        await Redis.ping();
         this.onSuccess();
 
         console.log("✨ All services initialised");
