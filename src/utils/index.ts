@@ -1,5 +1,3 @@
-import type { Request } from "express";
-
 import { hash, argon2id, verify } from "argon2";
 
 export const isEmpty = (value: any): boolean => {
@@ -30,18 +28,4 @@ export const verifyPassword = (
   input: string
 ): Promise<boolean> => {
   return verify(actual, input);
-};
-
-export const getCookie = (key: string, req: Request): string | undefined => {
-  const cookies = req.headers.cookie?.split(";") || [];
-
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split("=", 2);
-
-    if (name === key) {
-      return value;
-    }
-  }
-
-  return undefined;
 };

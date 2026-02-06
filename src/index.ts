@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import express from "express";
+import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import { exit } from "process";
 
@@ -21,6 +22,7 @@ initialiser
     const app = express();
 
     app.use(express.json());
+    app.use(cookieParser());
     app.use(morgan("tiny"));
 
     app.get(BASE_ROUTE, (req: Request, res: Response) => {

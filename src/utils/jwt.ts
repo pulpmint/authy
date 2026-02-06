@@ -6,8 +6,6 @@ import { jwtVerify, SignJWT } from "jose";
 
 import { JWT_CONFIG, JWT_TOKENS } from "@/constants/jwt";
 
-import { getCookie } from "@/utils";
-
 export const createTokenCookieConfig = (exp: Date): CookieOptions => {
   return {
     httpOnly: true,
@@ -111,8 +109,8 @@ export const verifyTokens = (
 ): Promise<(JWTVerifyResult<JWTPayload> | null)[]> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const accessToken = getCookie(JWT_CONFIG.ACCESS.COOKIE, req);
-      const refreshtoken = getCookie(JWT_CONFIG.REFRESH.COOKIE, req);
+      const accessToken = req.cookies[JWT_CONFIG.ACCESS.COOKIE];
+      const refreshtoken = req.cookies[JWT_CONFIG.REFRESH.COOKIE];
 
       const [access, refresh] = await Promise.all([
         verifyAccessToken(accessToken),
