@@ -5,7 +5,7 @@ import type {
 } from "@/validations/authValidations";
 
 import { hashPassword, verifyPassword } from "@/utils";
-import { clearTokens, setTokens } from "@/utils/jwt";
+import { blacklistTokens, setTokens } from "@/utils/jwt";
 
 import Prisma from "@/lib/prisma";
 
@@ -94,7 +94,7 @@ export const signOut = async (
   next: NextFunction
 ) => {
   try {
-    clearTokens(res);
+    await blacklistTokens(req, res);
 
     res.status(200).json({
       message: "User logged out successfully"

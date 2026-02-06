@@ -4,7 +4,7 @@ import createHttpError from "http-errors";
 
 import { CUSTOM_ERR_CODES_MAPPING } from "@/constants/errors";
 
-import { setTokens, verifyTokens } from "@/utils/jwt";
+import { blacklistTokens, setTokens, verifyTokens } from "@/utils/jwt";
 
 export const verifyJwt = async (
   req: Request,
@@ -12,7 +12,7 @@ export const verifyJwt = async (
   next: NextFunction
 ) => {
   try {
-    const [accessDecoded, refreshDecoded] = await verifyTokens(req);
+    const [accessDecoded, refreshDecoded] = await verifyTokens(req, res);
 
     const accessPayload = accessDecoded?.payload;
     const refreshPayload = refreshDecoded?.payload;
@@ -28,11 +28,9 @@ export const verifyJwt = async (
     }
 
     if (!accessPayload && refreshPayload) {
+      await blacklistTokens(req, res);
       await setTokens(res, refreshPayload);
     }
-
-    const payload = accessPayload || refreshPayload;
-    res.locals.payload = { ...payload };
 
     next();
     return;

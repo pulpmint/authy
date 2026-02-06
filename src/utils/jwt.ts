@@ -6,6 +6,8 @@ import { jwtVerify, SignJWT } from "jose";
 
 import { JWT_CONFIG, JWT_TOKENS } from "@/constants/jwt";
 
+import Redis from "@/lib/redis";
+
 export const createTokenCookieConfig = (exp: Date): CookieOptions => {
   return {
     httpOnly: true,
@@ -30,7 +32,18 @@ export const signToken = (
     .sign(new TextEncoder().encode(SECRET));
 };
 
-export const setTokenCookie = (
+export const setTokenPayload = (
+  res: Response,
+  type: JwtTokenType,
+  payload: JWTPayload
+) => {
+  res.locals.payload = {
+    ...res.locals.payload,
+    [type.toLocaleLowerCase()]: payload
+  };
+};
+
+export const setToken = (
   res: Response,
   payload: JWTPayload,
   type: JwtTokenType
@@ -46,6 +59,8 @@ export const setTokenCookie = (
 
       res.cookie(COOKIE, token, createTokenCookieConfig(exp));
 
+      setTokenPayload(res, type, { ...payload, iat, exp: exp.getTime() });
+
       resolve("Tokens added to the response");
     } catch (error) {
       reject(error);
@@ -54,10 +69,10 @@ export const setTokenCookie = (
 };
 
 export const setAccessToken = (res: Response, payload: any) =>
-  setTokenCookie(res, payload, JWT_TOKENS.ACCESS);
+  setToken(res, payload, JWT_TOKENS.ACCESS);
 
 export const setRefreshToken = (res: Response, payload: any) =>
-  setTokenCookie(res, payload, JWT_TOKENS.REFRESH);
+  setToken(res, payload, JWT_TOKENS.REFRESH);
 
 export const setTokens = (res: Response, payload: any): Promise<String> => {
   return new Promise(async (resolve, reject) => {
@@ -75,6 +90,7 @@ export const setTokens = (res: Response, payload: any): Promise<String> => {
 };
 
 export const verifyToken = (
+  res: Response,
   type: JwtTokenType,
   token?: string
 ): Promise<JWTVerifyResult<JWTPayload> | null> => {
@@ -83,6 +99,14 @@ export const verifyToken = (
       if (!token) {
         resolve(null);
       } else {
+        const isBlacklisted = await Redis.get(token);
+
+        if (isBlacklisted) {
+          clearToken(res, type);
+          resolve(null);
+          return;
+        }
+
         const { SECRET } = JWT_CONFIG[type];
 
         const decoded = await jwtVerify(
@@ -98,14 +122,15 @@ export const verifyToken = (
   });
 };
 
-export const verifyAccessToken = (token?: string) =>
-  verifyToken(JWT_TOKENS.ACCESS, token);
+export const verifyAccessToken = (res: Response, token?: string) =>
+  verifyToken(res, JWT_TOKENS.ACCESS, token);
 
-export const verifyRefreshToken = (token?: string) =>
-  verifyToken(JWT_TOKENS.REFRESH, token);
+export const verifyRefreshToken = (res: Response, token?: string) =>
+  verifyToken(res, JWT_TOKENS.REFRESH, token);
 
 export const verifyTokens = (
-  req: Request
+  req: Request,
+  res: Response
 ): Promise<(JWTVerifyResult<JWTPayload> | null)[]> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -113,9 +138,12 @@ export const verifyTokens = (
       const refreshtoken = req.cookies[JWT_CONFIG.REFRESH.COOKIE];
 
       const [access, refresh] = await Promise.all([
-        verifyAccessToken(accessToken),
-        verifyRefreshToken(refreshtoken)
+        verifyAccessToken(res, accessToken),
+        verifyRefreshToken(res, refreshtoken)
       ]);
+
+      setTokenPayload(res, JWT_TOKENS.ACCESS, access?.payload || {});
+      setTokenPayload(res, JWT_TOKENS.REFRESH, refresh?.payload || {});
 
       resolve([access, refresh]);
     } catch (error) {
@@ -143,4 +171,68 @@ export const clearRefreshToken = (res: Response) =>
 export const clearTokens = (res: Response) => {
   clearAccessToken(res);
   clearRefreshToken(res);
+};
+
+export const blacklistToken = (
+  res: Response,
+  type: JwtTokenType,
+  token?: string
+): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let exp: number | undefined;
+
+      const { [type.toLocaleLowerCase()]: decoded } = res.locals.payload || {};
+
+      exp = (decoded as JWTPayload)?.exp;
+
+      if (!exp && token) {
+        const decoded = await verifyToken(res, type, token);
+        exp = decoded?.payload?.exp;
+      }
+
+      if (!token || !exp) {
+        clearToken(res, type);
+
+        resolve("Tokens cleared");
+        return;
+      }
+
+      await Redis.set(token, type, "PXAT", exp);
+
+      clearToken(res, type);
+
+      resolve("Tokens blacklisted");
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const blacklistAccessToken = (req: Request, res: Response) =>
+  blacklistToken(res, JWT_TOKENS.ACCESS, req.cookies[JWT_CONFIG.ACCESS.COOKIE]);
+
+export const blacklistRefreshToken = (req: Request, res: Response) =>
+  blacklistToken(
+    res,
+    JWT_TOKENS.REFRESH,
+    req.cookies[JWT_CONFIG.REFRESH.COOKIE]
+  );
+
+export const blacklistTokens = (
+  req: Request,
+  res: Response
+): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await Promise.all([
+        blacklistAccessToken(req, res),
+        blacklistRefreshToken(req, res)
+      ]);
+
+      resolve("Tokens blacklisted");
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
